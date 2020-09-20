@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 @Data
@@ -25,8 +23,5 @@ public class TradeRecordDto {
 
     private int amount;
     private int rank;
-
-    @OneToOne
-    @JoinColumn(name = "rs_event_id")
-    private RsEventDto rsEventDto;
+    private int rsEventId;
 }

@@ -4,6 +4,7 @@ import com.thoughtworks.rslist.domain.Trade;
 import com.thoughtworks.rslist.domain.Vote;
 import com.thoughtworks.rslist.dto.RsEventDto;
 import com.thoughtworks.rslist.dto.TradeDto;
+import com.thoughtworks.rslist.dto.TradeRecordDto;
 import com.thoughtworks.rslist.dto.UserDto;
 import com.thoughtworks.rslist.dto.VoteDto;
 import com.thoughtworks.rslist.repository.RsEventRepository;
@@ -13,6 +14,7 @@ import com.thoughtworks.rslist.repository.UserRepository;
 import com.thoughtworks.rslist.repository.VoteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -61,23 +63,37 @@ public class RsService {
         rsEventRepository.save(rsEvent);
     }
 
-    public void buy(Trade trade, int id) {
+    public void buy(Trade trade, int id) throws Exception {
         final Optional<TradeDto> optionalTradeDto = tradeRepository.findByRank(trade.getRank());
-        if (optionalTradeDto.isPresent() && optionalTradeDto.get().getAmount() < trade.getAmount()) {
-            final TradeDto tradeDto = optionalTradeDto.get();
-            tradeDto.setAmount(trade.getAmount());
-            tradeDto.setRsEventDto(rsEventRepository.findById(id).get());
-            tradeRepository.save(tradeDto);
-            tradeRecordRepository.save(tradeDto);
+        final Optional<RsEventDto> rsEventDto = rsEventRepository.findById(id);
+        if (!rsEventDto.isPresent()) {
+            throw new Exception("Invalid rsEventId");
         }
-        if (!optionalTradeDto.isPresent()) {
-            final TradeDto tradeDto = TradeDto.builder()
+
+        if (optionalTradeDto.isPresent() &&
+            optionalTradeDto.get().getAmount() > trade.getAmount()) {
+            throw new Exception("Amount is not enough");
+        } else {
+            if (!optionalTradeDto.isPresent()) {
+                final TradeDto tradeDto = TradeDto.builder()
+                    .rank(trade.getRank())
+                    .amount(trade.getAmount())
+                    .rsEventId(id)
+                    .build();
+                tradeRepository.save(tradeDto);
+            } else {
+                final TradeDto tradeDto = optionalTradeDto.get();
+                tradeDto.setAmount(trade.getAmount());
+                tradeDto.setRsEventId(id);
+                tradeRepository.save(tradeDto);
+                rsEventRepository.deleteById(tradeDto.getRsEventId());
+            }
+            final TradeRecordDto tradeRecordDto = TradeRecordDto.builder()
                 .rank(trade.getRank())
                 .amount(trade.getAmount())
-                .rsEventDto(rsEventRepository.findById(id).get())
+                .rsEventId(id)
                 .build();
-            tradeRepository.save(tradeDto);
-            tradeRecordRepository.save(tradeDto);
+            tradeRecordRepository.save(tradeRecordDto);
         }
     }
 }
