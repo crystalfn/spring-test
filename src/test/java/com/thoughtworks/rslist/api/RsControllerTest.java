@@ -56,6 +56,8 @@ class RsControllerTest {
         voteRepository.deleteAll();
         rsEventRepository.deleteAll();
         userRepository.deleteAll();
+        tradeRepository.deleteAll();
+        tradeRecordRepository.deleteAll();
         userDto =
             UserDto.builder()
                 .voteNum(10)
@@ -68,18 +70,21 @@ class RsControllerTest {
     }
 
     @Test
-    public void shouldGetRsEventList() throws Exception {
+    public void shouldGetRsEventListBySort() throws Exception {
         UserDto save = userRepository.save(userDto);
 
-        RsEventDto rsEventDto =
-            RsEventDto.builder().keyword("无分类").eventName("第一条事件").user(save).build();
+        RsEventDto rsEventDto1 = RsEventDto.builder().keyword("无分类").eventName("第一条事件").user(save).build();
+        RsEventDto rsEventDto2 = RsEventDto.builder().keyword("无分类").eventName("第二条事件").user(save).build();
+        RsEventDto rsEventDto3 = RsEventDto.builder().keyword("无分类").eventName("第三条事件").user(save).rank(1).build();
 
-        rsEventRepository.save(rsEventDto);
+        rsEventRepository.save(rsEventDto1);
+        rsEventRepository.save(rsEventDto2);
+        rsEventRepository.save(rsEventDto3);
 
         mockMvc
             .perform(get("/rs/list"))
-            .andExpect(jsonPath("$", hasSize(1)))
-            .andExpect(jsonPath("$[0].eventName", is("第一条事件")))
+            .andExpect(jsonPath("$", hasSize(3)))
+            .andExpect(jsonPath("$[0].eventName", is("第三条事件")))
             .andExpect(jsonPath("$[0].keyword", is("无分类")))
             .andExpect(jsonPath("$[0]", not(hasKey("user"))))
             .andExpect(status().isOk());

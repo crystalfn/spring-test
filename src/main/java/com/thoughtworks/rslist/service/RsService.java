@@ -1,5 +1,6 @@
 package com.thoughtworks.rslist.service;
 
+import com.thoughtworks.rslist.domain.RsEvent;
 import com.thoughtworks.rslist.domain.Trade;
 import com.thoughtworks.rslist.domain.Vote;
 import com.thoughtworks.rslist.dto.RsEventDto;
@@ -15,9 +16,13 @@ import com.thoughtworks.rslist.repository.VoteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.w3c.dom.ls.LSException;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class RsService {
@@ -37,6 +42,43 @@ public class RsService {
         this.voteRepository = voteRepository;
         this.tradeRepository = tradeRepository;
         this.tradeRecordRepository = tradeRecordRepository;
+    }
+
+    public List<RsEvent> getRsEventList() {
+        List<RsEventDto> hasRankRsEvents = new ArrayList<>();
+        List<RsEventDto> noRankRsEvents = new ArrayList<>();
+        final List<RsEventDto> rsEventDtoList = rsEventRepository.findAll();
+        rsEventDtoList.forEach(item -> {
+            if (item.getRank() <= 0) {
+                noRankRsEvents.add(item);
+            } else {
+                hasRankRsEvents.add(item);
+            }
+        });
+
+        hasRankRsEvents.sort((o1, o2) -> o2.getVoteNum() - o1.getVoteNum());
+        List<RsEventDto> sortRsEventList = new ArrayList<>();
+        int index = 1;
+        for (RsEventDto noRankRsEvent : noRankRsEvents) {
+            for (RsEventDto hasRankRsEvent : hasRankRsEvents) {
+                if (hasRankRsEvent.getRank() == index) {
+                    sortRsEventList.add(hasRankRsEvent);
+                    index++;
+                }
+            }
+            sortRsEventList.add(noRankRsEvent);
+            index++;
+        }
+        return sortRsEventList.stream()
+            .map(item ->
+                RsEvent.builder()
+                    .eventName(item.getEventName())
+                    .keyword(item.getKeyword())
+                    .rank(item.getRank())
+                    .userId(item.getId())
+                    .voteNum(item.getVoteNum())
+                    .build())
+            .collect(Collectors.toList());
     }
 
     public void vote(Vote vote, int rsEventId) {

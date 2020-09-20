@@ -26,4 +26,6 @@ public class RsEventDto {
     private int voteNum;
     @ManyToOne
     private UserDto user;
+
+    private int rank = 0;
 }
