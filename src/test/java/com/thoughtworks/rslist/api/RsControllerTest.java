@@ -285,4 +285,53 @@ class RsControllerTest {
         assertEquals(1, rsEventRepository.findAll().size());
         assertEquals(rsEventDtoSecond.getId(), tradeDtoList.get(0).getRsEventId());
     }
+
+    @Test
+    public void shouldReturn400WhenAmountIsNotEnough() throws Exception {
+        UserDto save = userRepository.save(userDto);
+        RsEventDto rsEventDtoFirst = RsEventDto.builder()
+            .keyword("无分类")
+            .eventName("第一条事件")
+            .user(save)
+            .voteNum(10)
+            .build();
+        rsEventRepository.save(rsEventDtoFirst);
+        RsEventDto rsEventDtoSecond = RsEventDto.builder()
+            .keyword("无分类")
+            .eventName("第二条事件")
+            .user(save)
+            .voteNum(4)
+            .build();
+        rsEventRepository.save(rsEventDtoSecond);
+
+        final Trade tradeFirst = Trade.builder()
+            .amount(100)
+            .rank(1)
+            .build();
+        ObjectMapper objectMapperFirst = new ObjectMapper();
+        final String tradeJsonFirst = objectMapperFirst.writeValueAsString(tradeFirst);
+
+        mockMvc.perform(post("/rs/buy/{id}", rsEventDtoFirst.getId())
+            .content(tradeJsonFirst)
+            .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
+
+        final Trade tradeSecond = Trade.builder()
+            .amount(99)
+            .rank(1)
+            .build();
+        ObjectMapper objectMapperSecond = new ObjectMapper();
+        final String tradeJsonSecond = objectMapperSecond.writeValueAsString(tradeSecond);
+        mockMvc.perform(post("/rs/buy/{id}", rsEventDtoSecond.getId())
+            .content(tradeJsonSecond)
+            .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
+
+        final List<TradeDto> tradeDtoList = tradeRepository.findAll();
+        final List<TradeRecordDto> tradeRecordList = tradeRecordRepository.findAll();
+        assertEquals(1, tradeDtoList.size());
+        assertEquals(1, tradeRecordList.size());
+        assertEquals(2, rsEventRepository.findAll().size());
+        assertEquals(rsEventDtoFirst.getId(), tradeDtoList.get(0).getRsEventId());
+    }
 }
