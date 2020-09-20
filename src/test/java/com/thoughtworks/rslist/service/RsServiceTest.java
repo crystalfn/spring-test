@@ -155,4 +155,47 @@ class RsServiceTest {
             .rank(trade.getRank())
             .build());
     }
+
+    @Test
+    void shouldBuyRankWhenRankBeBought() throws Exception {
+        // given
+        UserDto userDto =
+            UserDto.builder()
+                .voteNum(5)
+                .phone("18888888888")
+                .gender("female")
+                .email("a@b.com")
+                .age(19)
+                .userName("xiaoli")
+                .id(2)
+                .build();
+        RsEventDto rsEventDto =
+            RsEventDto.builder()
+                .eventName("event name")
+                .id(1)
+                .keyword("keyword")
+                .voteNum(2)
+                .user(userDto)
+                .rank(1)
+                .amount(100)
+                .build();
+
+        Trade trade = new Trade(101, 1);
+        when(rsEventRepository.findById(anyInt())).thenReturn(Optional.of(rsEventDto));
+
+        // when
+        rsService.buy(trade, rsEventDto.getId());
+
+        // then
+        verify(tradeRecordRepository).save(TradeRecordDto.builder()
+            .amount(trade.getAmount())
+            .rsEventId(rsEventDto.getId())
+            .rank(trade.getRank())
+            .build());
+        verify(tradeRepository).save(TradeDto.builder()
+            .amount(trade.getAmount())
+            .rsEventId(rsEventDto.getId())
+            .rank(trade.getRank())
+            .build());
+    }
 }

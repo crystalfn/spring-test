@@ -28,4 +28,6 @@ public class RsEventDto {
     private UserDto user;
 
     private int rank = 0;
+
+    private int amount = 0;
 }

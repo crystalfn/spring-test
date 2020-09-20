@@ -22,4 +22,6 @@ public class RsEvent implements Serializable {
     private int userId;
 
     private int rank = 0;
+
+    private int amount = 0;
 }
