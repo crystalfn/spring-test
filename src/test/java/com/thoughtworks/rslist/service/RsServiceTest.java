@@ -1,5 +1,6 @@
 package com.thoughtworks.rslist.service;
 
+import com.thoughtworks.rslist.domain.Trade;
 import com.thoughtworks.rslist.domain.Vote;
 import com.thoughtworks.rslist.dto.RsEventDto;
 import com.thoughtworks.rslist.dto.UserDto;
@@ -96,6 +97,19 @@ class RsServiceTest {
             RuntimeException.class,
             () -> {
                 rsService.vote(vote, 1);
+            });
+    }
+
+    @Test
+    void shouldThrowExceptionWhenRsEventNotExist() {
+        // given
+        Trade trade = new Trade(100, 1);
+        when(rsEventRepository.findById(anyInt())).thenReturn(Optional.empty());
+        // when & then
+        assertThrows(
+            Exception.class,
+            () -> {
+                rsService.buy(trade, 5);
             });
     }
 }
