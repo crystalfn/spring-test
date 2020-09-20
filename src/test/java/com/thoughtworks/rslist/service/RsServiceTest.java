@@ -3,6 +3,8 @@ package com.thoughtworks.rslist.service;
 import com.thoughtworks.rslist.domain.Trade;
 import com.thoughtworks.rslist.domain.Vote;
 import com.thoughtworks.rslist.dto.RsEventDto;
+import com.thoughtworks.rslist.dto.TradeDto;
+import com.thoughtworks.rslist.dto.TradeRecordDto;
 import com.thoughtworks.rslist.dto.UserDto;
 import com.thoughtworks.rslist.dto.VoteDto;
 import com.thoughtworks.rslist.repository.RsEventRepository;
@@ -111,5 +113,46 @@ class RsServiceTest {
             () -> {
                 rsService.buy(trade, 5);
             });
+    }
+
+    @Test
+    void shouldBuyRankWhenRankNeverBeBought() throws Exception {
+        // given
+        UserDto userDto =
+            UserDto.builder()
+                .voteNum(5)
+                .phone("18888888888")
+                .gender("female")
+                .email("a@b.com")
+                .age(19)
+                .userName("xiaoli")
+                .id(2)
+                .build();
+        RsEventDto rsEventDto =
+            RsEventDto.builder()
+                .eventName("event name")
+                .id(1)
+                .keyword("keyword")
+                .voteNum(2)
+                .user(userDto)
+                .build();
+
+        Trade trade = new Trade(100, 1);
+        when(rsEventRepository.findById(anyInt())).thenReturn(Optional.of(rsEventDto));
+
+        // when
+        rsService.buy(trade, rsEventDto.getId());
+
+        // then
+        verify(tradeRecordRepository).save(TradeRecordDto.builder()
+            .amount(trade.getAmount())
+            .rsEventId(rsEventDto.getId())
+            .rank(trade.getRank())
+            .build());
+        verify(tradeRepository).save(TradeDto.builder()
+            .amount(trade.getAmount())
+            .rsEventId(rsEventDto.getId())
+            .rank(trade.getRank())
+            .build());
     }
 }
